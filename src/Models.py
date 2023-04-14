@@ -198,27 +198,27 @@ def multi_union(arr):
 	for compounds in arr: uniq_set = uniq_set.union(compounds)
 	return uniq_set
 
-def subset_mat(compounds):
+def subset_mat(arr):
 	subset = lambda x, y: set(x).issubset(y)
-	subset_relmat = np.ones((len(compounds), len(compounds)), dtype = bool)
-	non_symmetrical_matrix_iteration(compounds, subset_relmat, subset)
+	subset_relmat = np.ones((len(arr), len(arr)), dtype = bool)
+	non_symmetrical_matrix_iteration(arr, subset_relmat, subset)
 	return subset_relmat
 
-def superset_mat(compounds):
+def superset_mat(arr):
 	superset = lambda x, y: set(x).issuperset(y)
-	superset_relmat = np.ones((len(compounds), len(compounds)), dtype = bool)
-	non_symmetrical_matrix_iteration(compounds, superset_relmat, superset)
+	superset_relmat = np.ones((len(arr), len(arr)), dtype = bool)
+	non_symmetrical_matrix_iteration(arr, superset_relmat, superset)
 	return superset_relmat
 
-def incidence_vectors(elements, compounds):
-	incidence_mat = np.zeros((len(elements), len(compounds)), dtype = int)
-	for ci,c in enumerate(compounds):
+def incidence_vectors(elements, arr):
+	incidence_mat = np.zeros((len(elements), len(arr)), dtype = int)
+	for ci,c in enumerate(arr):
 		for ei, e in enumerate(elements):
 			if e in c: incidence_mat[ei, ci] = 1
 	return incidence_mat.T
 
-def powerset(iterable):
-    s = list(iterable)
+def powerset(arr):
+    s = list(arr)
     return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
 def non_symmetrical_matrix_iteration(data_array, target_matrix, function):
