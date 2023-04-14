@@ -14,5 +14,7 @@ Shanshan Li (sl9712@nyu.edu)
 
 ## Structural Overview
 
-- `/src/` contains the codes and the documentations
+- `src/` contains the codes and the documentations
+  - Check [here](src/Documentation.md) for the documentation
+
 

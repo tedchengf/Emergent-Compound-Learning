@@ -38,6 +38,7 @@ In this implementation, the model of the environment is handled by `Models.Compo
 #### Compound_Model
 
 `Models.Compound_Model(elements, emergent_compound_rewards = None)`
+
 Initialize an instance.
 
 
