@@ -4,6 +4,19 @@ from Models import *
 # Global Variables
 global elements, emergent_compound_rewards
 elements = ["A","B","C","D","E"]
+# emergent_compound_rewards = {
+# 	(): 0,
+# 	("A",): np.random.normal(),
+# 	("B",): np.random.normal(),
+# 	("C",): np.random.normal(),
+# 	("D",): np.random.normal(),
+# 	("E",): np.random.normal(),
+# 	("A","B"): 7,
+# 	("C", "E"): -5,
+# 	("B", "D"): 12,
+# 	("A", "C", "D"): -3,
+# 	("B", "C", "D", "E"): 10
+# }
 emergent_compound_rewards = {
 	(): 0,
 	("A",): np.random.normal(),
@@ -11,18 +24,27 @@ emergent_compound_rewards = {
 	("C",): np.random.normal(),
 	("D",): np.random.normal(),
 	("E",): np.random.normal(),
-	("A","B"): 7,
-	("C", "E"): -5,
-	("B", "D"): 12,
-	("A", "C", "D"): -3,
-	("B", "C", "D", "E"): 10
+	("A","B"): None,
+	("C", "E"): None,
+	("B", "D"): None,
+	("A", "C", "D"): None,
+	("B", "C", "D", "E"): None
 }
 # Random Seed
 np.random.seed(2023)
 
 def main():
 	ground_truth = Compound_Model(elements, emergent_compound_rewards)
-	
+	bayes_model = Bayesian_Model(elements, emergent_compound_rewards)
+	print(bayes_model._uninitialized_rewards)
+	print(len(bayes_model._uninitialized_rewards))
+	bayes_model.add_emergent_compounds({("A","B"):7, ("C", "E"): -5})
+	print(bayes_model._uninitialized_rewards)
+	print(len(bayes_model._uninitialized_rewards))
+	for c in bayes_model.compounds: print(c, ":", bayes_model.get_rewards(c)[0])
+	bayes_model.del_emergent_compounds(None)
+	return
+
 	# The reward values can be accessed like this
 	print("Initial Rewards: ")
 	for c in ground_truth.compounds: print(c, ":", ground_truth.get_rewards(c)[0])
