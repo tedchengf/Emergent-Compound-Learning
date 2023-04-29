@@ -15,7 +15,13 @@ In the project, we treat elements as strings (e.g., `"A", "B", "C"`) and we trea
 	>>> ("A", "B") == ("B", "A")
 	False
 	```
-	As such, when you put compounds into a query, make sure that they are in the correct order (in our case, `"A" < "B" < "C" < "D" < "E"`).
+	As such, when you put compounds into a query, make sure that they are in the correct order (in our case, `"A" < "B" < "C" < "D" < "E"`). If you are dealing with subject data (e.g., subject input), you might want to sort the tuple before giving it to the model like this 
+	
+	```python
+	>>> test_tuple = ("C", "B", "A")
+	>>> tuple(sorted(test))
+	('A', 'B', 'C')
+	```
 
 In this implementation, the model of the environment is handled by `Models.Compound_Model`. This class keeps tracks of the subset/superset relationships between all compounds. It also handles reward calculation and allows the user to dynamically change the reward values of emergent compounds. As such, this class is intended to be used as a ground-truth model (or environment) and a interactive surface for some algorithmic model (say, a graph-searching algorithm).
 
