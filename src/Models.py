@@ -142,7 +142,7 @@ class Compound_Model():
 				warnings.warn("No valid decomposition found for compound " + str(c) + "; it's reward is assumed to be None.")
 				c_prod = [0]
 			else:
-				c_prod = [self._E_compounds_products[par] for par in c_partitions]
+				c_prod = np.array([self._E_compounds_products[par] for par in c_partitions], dtype = int)
 			if target == "i":
 				products.append(c_prod)
 			else:
@@ -222,6 +222,20 @@ class Partition_Space():
 		self.prior = prior_func(self.hypotheses[0].compounds, self.hypotheses_incidence)
 		return
 
+	def likelihood(self, tested_compound, observed_products, llh_func):
+		llh = np.empty(len(self.prior))
+		for bm_ind, bm in enumerate(self.hypotheses):
+			validate_flag = bm.validate(tested_compound, observed_products)
+			llh[bm_ind] = llh_func(validate_flag, bm)
+
+	def posterior(self, tested_compound, observed_products, llh_func):
+		llh = np.empty(len(self.prior))
+		for bm_ind, bm in enumerate(self.hypotheses):
+			validate_flag = bm.validate(tested_compound, observed_products)
+			llh[bm_ind] = llh_func(validate_flag, bm)
+		marginal = logsumexp(np.add(self.prior, llh))
+		return llh + self.prior - marginal
+
 	def _initialize(self, compound_model, constrain_compounds):
 		compound_ids = np.arange(len(compound_model._compounds), dtype = int)
 		compound_len = len(compound_ids)
@@ -257,27 +271,195 @@ class Bayesian_Model(Compound_Model):
 		# update the empty rewards
 		for c in emergent_compound_products:
 			if emergent_compound_products[c] is None: self._uninitialized_E_compounds.add(c)
-		
 
 	def validate(self, compound, observed_products):
 		model_pred = self.get_products(compound)[0]
-		
-		print(model_pred)
 
 		# Depth 1
 		prod_encoding = np.product(model_pred)
-		print(prod_encoding)
 		if prod_encoding == np.product(observed_products): return True
 		# Depth 2
 		if prod_encoding != 0: return False
 		# Depth 3
 		if len(model_pred) != len(observed_products): return False
-		unknown_mask = model_pred > 0
-		print(unknown_mask)
+		model_pred_set = set(model_pred)
+		observed_prod_set = set(observed_products)
+		# Note that this holds because we have previously tested for len
+		valid_par = model_pred_set - observed_prod_set == {0}
+		if valid_par == False: return False
+		# Depth 4
+		potential_candidates = self.find_subsets([compound], target = self._uninitialized_E_compounds) [0]
+		products_dict = ({})
+		for prod in observed_prod_set - model_pred_set: 
+			products_dict.update({prod: potential_candidates})
+		res = self._product_merge(products_dict, self._product_candidate_table, set({}))
+		if type(res) is bool: return False
+		# resolve_flag = self._product_merge(products_dict)
+		# if resolve_flag == False: return False
+		# Depth 5
+		# resolve_flag = self._compound_merge()
+		res = self._compound_merge(*res)
+		if type(res) is bool: return False
+		self._udpate_states(*res)
 		return True
 
-	def _valid_partition(self, product_1, product_2):
+	def compare(self, compound, a_prod):
+		m_prod = self.get_products(compound)[0]
+
+		# Depth 1, 2, and 3
+		if len(m_prod) != len(a_prod): return False
+		a_prod_set = set(a_prod)
+		m_prod_set = set(m_prod)
+		# Identitical Partition
+		if a_prod_set == m_prod_set: return True
+		# Condition 1: actual product complete
+		if 0 not in a_prod_set:
+			# The default reaction. It means model predict products that are not
+			# there. Note we do not need to check the condition of no difference
+			# becaue that is screened out by the previous if clause
+			if m_prod_set - a_prod_set != {0}: return False
+			# Proceed to normal evaluation 
+			normal_merge = True
+		# Condition 2: actual product incomplete
+		else:
+			# Conditiona 2A: The model prediction is complete
+			if 0 not in m_prod_set:
+				# actual product contain things that are not predicted. Again,
+				# the difference cannot be an empty set
+				if a_prod_set - m_prod_set != {0}: return False
+				# over prediction
+				else: return True
+			# Condition 2B: neither is complete (hardest situation)
+			else:
+				normal_merge = False
+
+		# Depth 3 under normal merge
+		if normal_merge == True:
+			potential_candidates = self.find_subsets([compound], target = self._uninitialized_E_compounds) [0]
+			products_dict = ({})
+			for prod in a_prod_set - m_prod_set:
+				products_dict.update({prod: potential_candidates})
+			res = self._product_merge(products_dict, self._product_candidate_table.copy(), set({}))
+			if type(res) is bool: return False
+			res = self._compound_merge(*res)
+			if type(res) is bool: return False
 		return
+
+		prod_encoding = np.product(model_pred)
+		if prod_encoding == np.product(observed_products): return True
+		# Depth 2
+		if prod_encoding != 0: return False
+		# Depth 3
+		if len(model_pred) != len(observed_products): return False
+
+		model_pred_set = set(model_pred)
+		observed_prod_set = set(observed_products)
+		valid_par = model_pred_set - observed_prod_set == {0}
+		if valid_par == False: return False
+		# Depth 4
+		potential_candidates = self.find_subsets([compound], target = self._uninitialized_E_compounds) [0]
+		products_dict = ({})
+		for prod in observed_prod_set - model_pred_set: 
+			products_dict.update({prod: potential_candidates})
+		resolve_flag = self._product_merge(products_dict)
+		if resolve_flag == False: return False
+		# Depth 5
+		resolve_flag = self._compound_merge()
+		return True
+
+	def _product_merge(self, products_dict, product_candidate_table, changed_rows):
+		for prod in products_dict:
+			curr_cands = products_dict[prod]
+			# simple updates
+			if prod not in product_candidate_table:
+				product_candidate_table.update({prod: set(curr_cands)})
+				changed_rows.add(prod)
+			else:
+				recorded_cands = product_candidate_table[prod]
+				intersection = recorded_cands.intersection(curr_cands)
+				# Conflict
+				if len(intersection) == 0: return False
+				# No update
+				elif intersection == recorded_cands: pass
+				else:
+					product_candidate_table.update({prod: intersection})
+					changed_rows.add(prod)
+		return product_candidate_table, changed_rows
+
+	def _compound_merge(self, product_candidate_table, changed_rows):
+		model_updates = {}
+		while len(changed_rows) > 0:
+			curr_prod = changed_rows.pop()
+			curr_cands = product_candidate_table[curr_prod]
+			if len(curr_cands) == 0: return False
+			if len(curr_cands) == 1:
+				curr_compound = curr_cands.pop()
+				# cue the compound for model update
+				model_updates.update({curr_compound: curr_prod})
+				# delete the prod from the table
+				product_candidate_table.pop(curr_prod)
+				# delete the compound from all other candidiate lists
+				for other_prod in product_candidate_table:
+					other_cands = product_candidate_table[other_prod]
+					# catch situations where the only candidate have already
+					# been deleted
+					if len(other_cands) == 0: return False
+					if curr_compound in other_cands:
+						other_cands.remove(curr_compound)
+						product_candidate_table[other_prod] = other_cands
+						changed_rows.add(other_prod)
+		return product_candidate_table, model_updates
+
+	def _udpate_states(self, product_candidate_table, model_updates):
+		# modify the candidate table
+		self._product_candidate_table = product_candidate_table
+		# pair the compound
+		self._E_compounds_products.update(model_updates)
+		# delete the compound from unknowns
+		for compound in model_updates: self._uninitialized_E_compounds.remove(compound)
+		return
+
+	# def _product_merge(self, products_dict):
+	# 	for prod in products_dict:
+	# 		curr_cands = products_dict[prod]
+	# 		# simple updates
+	# 		if prod not in self._product_candidate_table:
+	# 			self._product_candidate_table.update({prod: set(curr_cands)})
+	# 			self._changed_rows.add(prod)
+	# 		else:
+	# 			recorded_cands = self._product_candidate_table[prod]
+	# 			intersection = recorded_cands.intersection(curr_cands)
+	# 			if len(intersection) == 0: return False
+	# 			elif intersection == recorded_cands: return True
+	# 			else:
+	# 				self._product_candidate_table.update({prod: intersection})
+	# 				self._changed_rows.add(prod)
+	# 	return True
+	
+	# def _compound_merge(self):
+	# 	while len(self._changed_rows) > 0:
+	# 		curr_prod = self._changed_rows.pop()
+	# 		curr_cands = self._product_candidate_table[curr_prod]
+	# 		if len(curr_cands) == 0: return False
+	# 		if len(curr_cands) == 1:
+	# 			curr_compound = curr_cands.pop()
+	# 			# pair the compound
+	# 			self._E_compounds_products[curr_compound] = curr_prod
+	# 			# delete the prod from the table
+	# 			self._product_candidate_table.pop(curr_prod)
+	# 			# delete the compound from unknowns
+	# 			self._uninitialized_E_compounds.remove(curr_compound)
+	# 			# delete the compound from all other candidiate lists
+	# 			for other_prod in self._product_candidate_table:
+	# 				other_cands = self._product_candidate_table[other_prod]
+	# 				# catch situations where the only candidate have already
+	# 				# been deleted
+	# 				if len(other_cands) == 0: return False
+	# 				if curr_compound in other_cands:
+	# 					other_cands.remove(curr_compound)
+	# 					self._product_candidate_table[other_prod] = other_cands
+	# 					self._changed_rows.add(other_prod)
+	# 	return
 
 	def add_emergent_compounds(self, emergent_compound_products):
 		self.verify_compounds(emergent_compound_products)
@@ -292,6 +474,12 @@ class Bayesian_Model(Compound_Model):
 
 def uniform_prior(compounds, incidences):
 	return np.ones(incidences.shape[0])*(-np.log(incidences.shape[0]))
+
+def simple_llh(flag, model):
+	if flag == False: 
+		return -np.inf
+	else:
+		return -np.log(len(model._uninitialized_E_compounds) + 1)
 
 # useful when you do not want numpy arrays to collapse iterables
 def nparray_convert(arr):
