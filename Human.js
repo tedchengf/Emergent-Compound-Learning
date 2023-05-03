@@ -10,7 +10,7 @@
 var jsPsych = initJsPsych({
   on_finish: function() {
     //jsPsych.data.displayData();
-    sub_ID = jsPsych.data.get()["trials"][0]["response"]["Q0"]
+    sub_ID = jsPsych.data.get()["trials"][1]["response"]["Q0"]
     jsPsych.data.get().localSave('csv',`${sub_ID}_data.csv`);
   }
 });
