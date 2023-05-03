@@ -299,6 +299,8 @@ var end = {
 
 
         }
+        sub_ID = jsPsych.data.get()["trials"][1]["response"]["Q0"]
+        jsPsych.data.get().localSave('csv',`${sub_ID}_data.csv`)
 
         return `<p> Congratulations! <br> The experimenter will now ask you to record what you think each compound produces. <br>
         For reference, below are the compounds you tested. </p>
@@ -307,7 +309,7 @@ var end = {
       },
 
   //"<p> Congratulations! The experimenter will instruct you on what to do next</p>",
-  choices: ["Complete"]
+  choices: []
 };
 timeline.push(end);
 
