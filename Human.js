@@ -104,8 +104,8 @@ var instructionsC = {
     There is a one-to-one relationship between compounds and their products <br>
     (so there's no need to test the same compound more than once). <br>
     <p> It's your job to figure out what each compound produces. <br>
-    Due to a shortage of solvent, <em> you can only test 11 compounds, </em>but <b> you should try to finish in as few trials as possible. </b> <br>
-    After 11 trials, you will be required to report what you think each compound produces. </p>
+    Due to a shortage of solvent, <em> you can only test 8 compounds, </em>but <b> you should try to finish in as few trials as possible. </b> <br>
+    After 8 trials, you will be required to report what you think each compound produces. </p>
     <p> If you think you know all of the compounds before your 11 trials are completed, click the "I'm done" button. </p>
     <p> When you're ready to start testing, click continue. </p>
     <div style='width: 700px;'>
