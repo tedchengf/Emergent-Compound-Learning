@@ -103,6 +103,7 @@ var instructionsC = {
     <p> Given this knowledge, mathematically, there are 11 possible ways to combine each of the four elements with the solvent. <br>
     There is a one-to-one relationship between compounds and their products <br>
     (so there's no need to test the same compound more than once). <br>
+    Order also does not matter. <br>
     <p> It's your job to figure out what each compound produces. <br>
     Due to a shortage of solvent, <em> you can only test 8 compounds, </em>but <b> you should try to finish in as few trials as possible. </b> <br>
     After 8 trials, you will be required to report what you think each compound produces. </p>
