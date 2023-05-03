@@ -106,7 +106,7 @@ var instructionsC = {
     <p> It's your job to figure out what each compound produces. <br>
     Due to a shortage of solvent, <em> you can only test 8 compounds, </em>but <b> you should try to finish in as few trials as possible. </b> <br>
     After 8 trials, you will be required to report what you think each compound produces. </p>
-    <p> If you think you know all of the compounds before your 11 trials are completed, click the "I'm done" button. </p>
+    <p> If you think you know all of the compounds before your 8 trials are completed, click the "I'm done" button. </p>
     <p> When you're ready to start testing, click continue. </p>
     <div style='width: 700px;'>
   `,
