@@ -238,7 +238,7 @@ var loop_node = {
     timeline: [trial, output_trial],
     loop_function: function(data, c = count){
       //console.log(c)
-        if(c > 9 || data["trials"][1]["response"] == 1){
+        if(c > 6 || data["trials"][1]["response"] == 1){
             return false;
         } else {
           count = count+1
@@ -300,7 +300,7 @@ var end = {
 
         }
 
-        return `<p> Congratulations! <br> The experimenter will now hand you a piece of paper to record what you think each compound produces. <br>
+        return `<p> Congratulations! <br> The experimenter will now ask you to record what you think each compound produces. <br>
         For reference, below are the compounds you tested. </p>
         <center> <hr> Known Compounds: <br> ${known_compounds} <hr>
         <center> Tested Compounds: </p> <table> ${all_phrases.join(' ')} </table> </center>`
