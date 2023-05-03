@@ -124,7 +124,7 @@ var trial = {
   type: jsPsychSurveyMultiSelect,
   questions: [
     {
-      prompt: "<center> <p> What compound would you like to test? <b>(Select at least 2)</b> </p> </center>", 
+      prompt: "<center> <p> What compound would you like to test? <b>(Select 2, 3, or 4)</b> </p> </center>", 
       options: ["Air (\u{1F701})", "Earth (\u{1F703})", "Fire (\u{1F702})", "Water (\u{1F704})"], 
       horizontal: true,
       required: true,
