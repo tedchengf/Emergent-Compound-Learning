@@ -247,6 +247,10 @@ class Bayesian_Model(Compound_Model):
 		for c in emergent_compound_rewards:
 			if emergent_compound_rewards[c] is None: self._uninitialized_E_compounds.add(c)
 
+	def validate(self, compound, partition):
+		
+		return
+
 	def add_emergent_compounds(self, emergent_compound_rewards):
 		super()._verify_compounds(emergent_compound_rewards)
 		for c in emergent_compound_rewards:

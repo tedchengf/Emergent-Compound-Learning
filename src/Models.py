@@ -1,9 +1,19 @@
 import numpy as np
 import random
+import sys, os
 import copy
 import warnings
 from itertools import product, combinations, permutations, chain
+from tqdm import tqdm
+from scipy.stats import gamma
+from scipy.special import logsumexp
+from scipy.stats import entropy
+from scipy.stats import rankdata
 warnings.filterwarnings("ignore")
+
+###############################################################################
+# Compound_Model Class
+###############################################################################
 
 class Compound_Model():
 	def __init__(self, elements, products, emergent_compound_products = None):
@@ -209,162 +219,77 @@ class Compound_Model():
 		except(TypeError) as te: pass	
 		raise TypeError("Unacceptable query type: " + str(type(query)))
 
-from tqdm import tqdm
-from scipy.special import logsumexp
-class Partition_Space():
-	def __init__(self, compound_model, constrain_compounds = None):
-		self.hypotheses = None
-		self.hypotheses_incidence = None
-		self.prior = None
-		self._initialize(compound_model, constrain_compounds)
+###############################################################################
+# Bayesian_Model Class
+###############################################################################
 
-	def set_prior(self, prior_func):
-		self.prior = prior_func(self.hypotheses[0].compounds, self.hypotheses_incidence)
-		return
-
-	def likelihood(self, tested_compound, observed_products, llh_func):
-		llh = np.empty(len(self.prior))
-		for bm_ind, bm in enumerate(self.hypotheses):
-			validate_flag = bm.validate(tested_compound, observed_products)
-			llh[bm_ind] = llh_func(validate_flag, bm)
-
-	def posterior(self, tested_compound, observed_products, llh_func):
-		llh = np.empty(len(self.prior))
-		for bm_ind, bm in enumerate(self.hypotheses):
-			validate_flag = bm.validate(tested_compound, observed_products)
-			llh[bm_ind] = llh_func(validate_flag, bm)
-		marginal = logsumexp(np.add(self.prior, llh))
-		return llh + self.prior - marginal
-
-	def _initialize(self, compound_model, constrain_compounds):
-		compound_ids = np.arange(len(compound_model._compounds), dtype = int)
-		compound_len = len(compound_ids)
-		if constrain_compounds is not None:
-			constrain_compounds_id = compound_model.compound_to_ind	(constrain_compounds.keys())
-			compound_ids = list(filter(lambda x: x not in constrain_compounds_id, compound_ids))
-			compound_ids = np.array(compound_ids, dtype = int)
-		hypotheses = np.zeros((2**(len(compound_ids)), compound_len), dtype = int)
-		all_partitions = powerset(compound_ids)
-		for i, subset in enumerate(all_partitions): 
-			hypotheses[i][list(subset)] = True
-		if constrain_compounds is not None:
-			hypotheses[:, constrain_compounds_id] = True
-		self.hypotheses_incidence = hypotheses
-		self.hypotheses = []
-		for hypothesis in hypotheses:
-			self.hypotheses.append(self._initialize_bayes_model(hypothesis, compound_model, constrain_compounds))
-		self.hypotheses = np.array(self.hypotheses, dtype = object)
-
-	def _initialize_bayes_model(self,hypothesis,compound_model,constrain_compounds):
-		emergent_compound_products = {}
-		for index, compound in enumerate(compound_model._compounds):
-			if hypothesis[index] == True:
-				emergent_compound_products.update({compound_model._compounds[index]: None})
-		if constrain_compounds is not None: emergent_compound_products.update(constrain_compounds)
-		return Bayesian_Model(compound_model._elements, list(compound_model._products[1:]), emergent_compound_products)
-
+# The bottom level class for the models. The Bayesian_Model is a subclass of
+# Compound_Model. It instantiate a bayesian hypothesis and check for consistency
+# when updating new observations.
 class Bayesian_Model(Compound_Model):
 	def __init__(self, elements, products, emergent_compound_products):
 		super().__init__(elements, products, emergent_compound_products)
+		# A set of emergent compounds whose product have not been determined
 		self._uninitialized_E_compounds = set({})
+		# The product candidate table that keeps track of possible product
+		# assignment to compounds. The product is in keys, and the candidate are
+		# in values as lists
 		self._product_candidate_table = dict({})
+		# A flag that represent whether the model had ran into conflict. 
+		self.solve_flag = True
 		# update the empty rewards
 		for c in emergent_compound_products:
 			if emergent_compound_products[c] is None: self._uninitialized_E_compounds.add(c)
 
-	def validate(self, compound, observed_products):
+	# The main function that update the new observation into the product
+	# candidate table. It checks for consistency and return False whenever the
+	# prediction is incorrect or the merge operation fails.
+	def validate(self, compound, observed_products, update):
+		if self.solve_flag == False: return False
 		model_pred = self.get_products(compound)[0]
-
 		# Depth 1
 		prod_encoding = np.product(model_pred)
-		if prod_encoding == np.product(observed_products): return True
+		if prod_encoding == np.product(observed_products): 
+			return True
 		# Depth 2
-		if prod_encoding != 0: return False
+		if prod_encoding != 0: 
+			if update == True:
+				self.solve_flag = False
+			return False
 		# Depth 3
-		if len(model_pred) != len(observed_products): return False
+		if len(model_pred) != len(observed_products): 
+			if update == True:
+				self.solve_flag = False
+			return False
 		model_pred_set = set(model_pred)
 		observed_prod_set = set(observed_products)
 		# Note that this holds because we have previously tested for len
 		valid_par = model_pred_set - observed_prod_set == {0}
-		if valid_par == False: return False
+		if valid_par == False: 
+			if update == True:
+				self.solve_flag = False
+			return False
 		# Depth 4
 		potential_candidates = self.find_subsets([compound], target = self._uninitialized_E_compounds) [0]
 		products_dict = ({})
 		for prod in observed_prod_set - model_pred_set: 
 			products_dict.update({prod: potential_candidates})
-		res = self._product_merge(products_dict, self._product_candidate_table, set({}))
-		if type(res) is bool: return False
-		# resolve_flag = self._product_merge(products_dict)
-		# if resolve_flag == False: return False
-		# Depth 5
-		# resolve_flag = self._compound_merge()
-		res = self._compound_merge(*res)
-		if type(res) is bool: return False
-		self._udpate_states(*res)
-		return True
-
-	def compare(self, compound, a_prod):
-		m_prod = self.get_products(compound)[0]
-
-		# Depth 1, 2, and 3
-		if len(m_prod) != len(a_prod): return False
-		a_prod_set = set(a_prod)
-		m_prod_set = set(m_prod)
-		# Identitical Partition
-		if a_prod_set == m_prod_set: return True
-		# Condition 1: actual product complete
-		if 0 not in a_prod_set:
-			# The default reaction. It means model predict products that are not
-			# there. Note we do not need to check the condition of no difference
-			# becaue that is screened out by the previous if clause
-			if m_prod_set - a_prod_set != {0}: return False
-			# Proceed to normal evaluation 
-			normal_merge = True
-		# Condition 2: actual product incomplete
+		if update == True:
+			product_candidate_table = self._product_candidate_table
 		else:
-			# Conditiona 2A: The model prediction is complete
-			if 0 not in m_prod_set:
-				# actual product contain things that are not predicted. Again,
-				# the difference cannot be an empty set
-				if a_prod_set - m_prod_set != {0}: return False
-				# over prediction
-				else: return True
-			# Condition 2B: neither is complete (hardest situation)
-			else:
-				normal_merge = False
-
-		# Depth 3 under normal merge
-		if normal_merge == True:
-			potential_candidates = self.find_subsets([compound], target = self._uninitialized_E_compounds) [0]
-			products_dict = ({})
-			for prod in a_prod_set - m_prod_set:
-				products_dict.update({prod: potential_candidates})
-			res = self._product_merge(products_dict, self._product_candidate_table.copy(), set({}))
-			if type(res) is bool: return False
-			res = self._compound_merge(*res)
-			if type(res) is bool: return False
-		return
-
-		prod_encoding = np.product(model_pred)
-		if prod_encoding == np.product(observed_products): return True
-		# Depth 2
-		if prod_encoding != 0: return False
-		# Depth 3
-		if len(model_pred) != len(observed_products): return False
-
-		model_pred_set = set(model_pred)
-		observed_prod_set = set(observed_products)
-		valid_par = model_pred_set - observed_prod_set == {0}
-		if valid_par == False: return False
-		# Depth 4
-		potential_candidates = self.find_subsets([compound], target = self._uninitialized_E_compounds) [0]
-		products_dict = ({})
-		for prod in observed_prod_set - model_pred_set: 
-			products_dict.update({prod: potential_candidates})
-		resolve_flag = self._product_merge(products_dict)
-		if resolve_flag == False: return False
-		# Depth 5
-		resolve_flag = self._compound_merge()
+			product_candidate_table = copy.deepcopy(self._product_candidate_table)
+		res = self._product_merge(products_dict, product_candidate_table, set({}))
+		if type(res) is bool:
+			if update == True:
+				self.solve_flag = False
+			return False
+		res = self._compound_merge(*res)
+		if type(res) is bool: 
+			if update == True:
+				self.solve_flag = False
+			return False
+		if update == True:
+			self._udpate_states(*res)
 		return True
 
 	def _product_merge(self, products_dict, product_candidate_table, changed_rows):
@@ -419,61 +344,289 @@ class Bayesian_Model(Compound_Model):
 		for compound in model_updates: self._uninitialized_E_compounds.remove(compound)
 		return
 
-	# def _product_merge(self, products_dict):
-	# 	for prod in products_dict:
-	# 		curr_cands = products_dict[prod]
-	# 		# simple updates
-	# 		if prod not in self._product_candidate_table:
-	# 			self._product_candidate_table.update({prod: set(curr_cands)})
-	# 			self._changed_rows.add(prod)
-	# 		else:
-	# 			recorded_cands = self._product_candidate_table[prod]
-	# 			intersection = recorded_cands.intersection(curr_cands)
-	# 			if len(intersection) == 0: return False
-	# 			elif intersection == recorded_cands: return True
-	# 			else:
-	# 				self._product_candidate_table.update({prod: intersection})
-	# 				self._changed_rows.add(prod)
-	# 	return True
-	
-	# def _compound_merge(self):
-	# 	while len(self._changed_rows) > 0:
-	# 		curr_prod = self._changed_rows.pop()
-	# 		curr_cands = self._product_candidate_table[curr_prod]
-	# 		if len(curr_cands) == 0: return False
-	# 		if len(curr_cands) == 1:
-	# 			curr_compound = curr_cands.pop()
-	# 			# pair the compound
-	# 			self._E_compounds_products[curr_compound] = curr_prod
-	# 			# delete the prod from the table
-	# 			self._product_candidate_table.pop(curr_prod)
-	# 			# delete the compound from unknowns
-	# 			self._uninitialized_E_compounds.remove(curr_compound)
-	# 			# delete the compound from all other candidiate lists
-	# 			for other_prod in self._product_candidate_table:
-	# 				other_cands = self._product_candidate_table[other_prod]
-	# 				# catch situations where the only candidate have already
-	# 				# been deleted
-	# 				if len(other_cands) == 0: return False
-	# 				if curr_compound in other_cands:
-	# 					other_cands.remove(curr_compound)
-	# 					self._product_candidate_table[other_prod] = other_cands
-	# 					self._changed_rows.add(other_prod)
-	# 	return
+###############################################################################
+# Partition_Space Class
+###############################################################################
 
-	def add_emergent_compounds(self, emergent_compound_products):
-		self.verify_compounds(emergent_compound_products)
-		self.verify_products(emergent_compound_products.values())
-		for c in emergent_compound_products:
-			if c not in self._uninitialized_E_compounds: raise RuntimeError("Unwarrented update; the compound ", c, " is either updated in the past or does does not belong to the emergent compound set")
-			self._uninitialized_E_compounds.remove(c)
-			self._E_compounds_products.update({c: emergent_compound_products[c]})
+# Partition_Space is the middel-level class that manage the entire Bayesian
+# hypothesis space. It keep tracks of each hypothesis instantiated as
+# instances of Bayesian_Model
+class Partition_Space():
+	def __init__(self, compound_model, constrain_compounds = None):
+		# A list of Bayesian_Models as hypotheses
+		self.hypotheses = None
+		# A numpy 2D array of shape (hypothesis, compounds). This is an
+		# incidence matrix of inclusion of compounds in each model
+		self.hypotheses_incidence = None
+		# A probability distribution. Each time the model is updated, the
+		# posterior will become the new prior
+		self.prior = None
+		self._initialize(compound_model, constrain_compounds)
+
+	# Set the prior
+	def set_prior(self, prior_func):
+		self.prior = prior_func(self.hypotheses[0].compounds, self.hypotheses_incidence)
+		return
+
+	# Given a compound and the products, calculate the change in posterior
+	# distribution by pushing thie product to the hypotheses. Does not change
+	# the state of the models 
+	# Returns: 
+	# 	- the information gain adjusted by P(products) (float)
+	def information_gain(self, compound, products, llh_func, ig_func):
+		llh = np.empty(len(self.prior))
+		for bm_ind, bm in enumerate(self.hypotheses):
+			validate_flag = bm.validate(compound, products, update = False)
+			llh[bm_ind] = llh_func(validate_flag, bm)
+		marginal = logsumexp(np.add(self.prior, llh))
+		posterior = llh + self.prior - marginal
+		ig = ig_func(np.exp(self.prior)) - ig_func(np.exp(posterior))
+		return np.exp(marginal)*ig
+
+	# A function that update the models given the tested compound and the
+	# products. Does change the state of the models
+	def bayesian_update(self, tested_compound, observed_products, llh_func):
+		llh = np.empty(len(self.prior))
+		for bm_ind, bm in enumerate(self.hypotheses):
+			validate_flag = bm.validate(tested_compound, observed_products, update = True)
+			llh[bm_ind] = llh_func(validate_flag, bm)
+		marginal = logsumexp(np.add(self.prior, llh))
+		posterior = llh + self.prior - marginal
+		self.prior = posterior
+		return posterior
+
+	def _initialize(self, compound_model, constrain_compounds):
+		compound_ids = np.arange(len(compound_model._compounds), dtype = int)
+		compound_len = len(compound_ids)
+		if constrain_compounds is not None:
+			constrain_compounds_id = compound_model.compound_to_ind	(constrain_compounds.keys())
+			compound_ids = list(filter(lambda x: x not in constrain_compounds_id, compound_ids))
+			compound_ids = np.array(compound_ids, dtype = int)
+		hypotheses = np.zeros((2**(len(compound_ids)), compound_len), dtype = int)
+		all_partitions = powerset(compound_ids)
+		for i, subset in enumerate(all_partitions): 
+			hypotheses[i][list(subset)] = True
+		if constrain_compounds is not None:
+			hypotheses[:, constrain_compounds_id] = True
+		self.hypotheses_incidence = hypotheses
+		self.hypotheses = []
+		for hypothesis in hypotheses:
+			self.hypotheses.append(self._initialize_bayes_model(hypothesis, compound_model, constrain_compounds))
+		self.hypotheses = np.array(self.hypotheses, dtype = object)
+
+	def _initialize_bayes_model(self,hypothesis,compound_model,constrain_compounds):
+		emergent_compound_products = {}
+		for index, compound in enumerate(compound_model._compounds):
+			if hypothesis[index] == True:
+				emergent_compound_products.update({compound_model._compounds[index]: None})
+		if constrain_compounds is not None: emergent_compound_products.update(constrain_compounds)
+		return Bayesian_Model(compound_model._elements, list(compound_model._products[1:]), emergent_compound_products)
+
+###############################################################################
+# Active_Learning Class
+###############################################################################
+
+# Active_Learning is the top-level class that manage the active learning part of
+# the model. Below is a list of attributes that the user may find useful:
+#	- Active_Learning.compound_model
+#	- Active_Learning.partition_space
+# Below is a list of functions that the user may find useful:
+#	- Active_Learning.active_learning
+#	- Active_Learning.choose_compound
+#	- Active_learning.learning_episode
+class Active_Learning():
+	def __init__(self, compound_model, constrain_compounds, prior_func, llh_func, ig_func = entropy):
+		# The ground turth compound model
+		self.compound_model = compound_model
+		# The partition space containing bayesian priors
+		self.partition_space = Partition_Space(compound_model, constrain_compounds)
+		self.partition_space.set_prior(prior_func)
+		self.constrain_compounds = constrain_compounds
+		self.constrain_compounds_prod = set({})
+		for c in self.constrain_compounds: self.constrain_compounds_prod.add(self.compound_model._prod_to_id[self.constrain_compounds[c]])
+		# Likelihood Function
+		self.llh_func = llh_func
+		# Information Gain Function
+		self.ig_func = ig_func
+		# The following attributes are constantly being updated
+		self.novel_compounds = set({})
+		self.compound_history = set({})
+
+	# The all-in-one active learning algorithm. Advance trials and update
+	# bayesian hypotheses until a model reaches the posterior of 0.99 or all 11
+	# compounds have been observed
+	# Returns:
+	# 	- The best model (an instance of Bayesian_Model)
+	#	- The posterior probability of the best model (float)
+	#	- The history of tested compounds (list)
+	#	- Posterior entrophy after each update (list)
+	#	- Expected information gain for each tested compound (list)
+	#	- Actual information gain for each tested compound (list)
+	def active_learning(self, exit_threshold = 0.99, return_n = 3, verbose = True):
+		# Initialize
+		counter = 0
+		curr_prior = np.exp(self.partition_space.prior)
+		top_prior = np.amax(curr_prior)
+		choice_history = []
+		expected_IG = [0]
+		actual_IG = [0]
+		posterior_entropy = [self.ig_func(np.exp(self.partition_space.prior))]
+		
+		# main learning loop
+		while top_prior < exit_threshold:
+			counter += 1
+			if verbose == True:
+				print("\n-------------------------------------------------------------------\nCurrent Trial:", counter,"\n-------------------------------------------------------------------\n")
+			# Choose a compound
+			curr_compound, IG, compound_ranks, compounds, dist = self.choose_compound(verbose)
+			choice_history.append(curr_compound)
+			expected_IG.append(IG)
+			curr_entropy = self.ig_func(np.exp(self.partition_space.prior))
+			actual_IG.append(posterior_entropy[-1] - curr_entropy)
+			posterior_entropy.append(curr_entropy)
+			if verbose == True: print()
+			# Observe the compound's actual product and update the bayesian hypotheses
+			models, probs, AIG = self.learning_episode(curr_compound, return_n, verbose)
+			top_prior = probs[0]
+
+		# end of loop
+		if verbose == True:
+			print("\n-------------------------------------------------------------------\nResults")
+			print(" - Top Model Probability =", top_prior)
+			print(" - Learning Accomplished in", counter, "Trials.")
+			print("-------------------------------------------------------------------\n")
+		
+		return models[0], top_prior, choice_history, posterior_entropy, expected_IG, actual_IG
+
+	# The function for choosing the next compound to test basing on the model
+	# history. This is the first half of the active_learning function
+	# Returns
+	#	- The selected compound for testing (tuple)
+	#	- The expected information gain for the said compound (float)
+	#   - The ranks of each compound basing on their entrophy (smaller means
+	#     less information gain) (np.array)
+	#	- all compounds (list)
+	#	- Each compound's expected information gain (list)
+	def choose_compound(self, verbose = False):
+		compounds, dist = self.get_test_dist(verbose)
+		compound_ranks = rankdata(dist, method = "max")
+		best_compound_inds = np.arange(len(compounds), dtype = int)[compound_ranks == len(compound_ranks)]
+		comp_ind = np.random.choice(best_compound_inds)
+		test_comp = compounds[comp_ind]
+		IG = dist[comp_ind]
+		return test_comp, IG, compound_ranks, compounds, dist
+
+	# The function fo updating the bayesian hypotheses. This is the second half
+	# of the active_learning function
+	# Returns:
+	#	- The top return_n bayesian models (a list of Bayesian_Model instances)
+	#	- The posterior distribution of hypotheses after the update (np.array)
+	#	- The actual informaion gain (float)
+	def learning_episode(self, curr_compound, return_n = 3, verbose = False):
+		curr_prods = self.compound_model.get_products([curr_compound])[0]
+		for prod in curr_prods:
+			if prod not in self.constrain_compounds_prod: self.novel_compounds.add(prod)
+		self.compound_history.add(curr_compound)
+		start_entrophy = self.ig_func(np.exp(self.partition_space.prior))
+		self.partition_space.bayesian_update(curr_compound, curr_prods, self.llh_func)
+		end_entrophy = self.ig_func(np.exp(self.partition_space.prior))
+		actual_IG = start_entrophy - end_entrophy
+		if verbose == True:
+			self.print_compound_prods(curr_compound)
+		models, posterior = self.get_best_models(return_n, verbose)
+		return models, posterior, actual_IG
+	
+	def print_compound_prods(self, compound):
+		curr_part = self.compound_model.find_subsets(compound, target = self.compound_model._E_compounds)[0]
+		print("================================")
+		print("Tested Compound:", compound)
+		print("Actual Observations:")
+		for par in sorted(curr_part):
+			print("  - " + str(self.compound_model._E_compounds_products[par]) + " | " + str(par))
+
+	# A function to get the best num Bayesian_Model instances in the current
+	# state
+	# Returns:
+	#	- Top num hyptheses (a list of Bayesian_Model instances)
+	#	- The corresponding posterior probability of the hypotheses (np.array)
+	def get_best_models(self, num = 1, verbose = False):
+		curr_prior = np.exp(self.partition_space.prior)
+		top_n_ind = np.argsort(curr_prior)[::-1][:num]
+		if verbose == True:
+			for rank, model_ind in enumerate(top_n_ind):
+				print("================================")
+				print("Model rank:", rank + 1)
+				print("Current Probability:", np.around(curr_prior[model_ind], decimals = 4))
+				print("Emergent Products:")
+				for compound in self.partition_space.hypotheses[model_ind]._E_compounds_products:
+					if len(compound) > 1:
+						print("  - " + str(self.partition_space.hypotheses[model_ind]._E_compounds_products[compound]) + 
+								" | " + str(compound))
+		return self.partition_space.hypotheses[top_n_ind], curr_prior[top_n_ind]
+
+	# A function to get the expected information gain of each compound that can 
+	# be tested
+	# Returns:
+	#	- The compounds that can be tested (list of tuples)
+	#	- The corresponding information gain for each compounds (list)
+	def get_test_dist(self, verbose = False):
+		if verbose == False:
+			sys.stdout = open(os.devnull, 'w')
+		valid_compounds = []
+		for c in self.compound_model.compounds:
+			if len(c) > 1 and c not in self.compound_history:
+				valid_compounds.append(c)
+		dist = []
+		print("Searching for Compounds to Test")
+		for i in tqdm(range(len(valid_compounds)), disable = ~verbose):
+			c = valid_compounds[i]
+			dist.append(self.compound_expected_utility(c))
+		if verbose == False:
+			sys.stdout = sys.__stdout__
+		return valid_compounds, dist
+
+	# A function that compute the expected information gain of a compound
+	# Returns:
+	#	- The averaged expected information gain (float)
+	def compound_expected_utility(self, compound):
+		possible_products = self.possible_products(compound)
+		utilities = [self.partition_space.information_gain(compound, pp, self.llh_func, self.ig_func) for pp in possible_products]
+		return np.nanmean(utilities)
+
+	# A function that generate possible products of a compound given the current
+	# state
+	# Returns:
+	# 	- Products (list of tuples)
+	def possible_products(self, compound):
+		basic_products = self.compound_model.find_subsets(compound, target = self.constrain_compounds.keys())[0]
+		basic_products = [self.compound_model._prod_to_id[self.constrain_compounds[c]] for c in basic_products]
+		additional_products = list(powerset(self.novel_compounds))
+		possible_products = []
+		for comb in additional_products: possible_products.append(basic_products + list(comb))
+		return possible_products
 
 # Helper Functions
 ###############################################################################
 
 def uniform_prior(compounds, incidences):
 	return np.ones(incidences.shape[0])*(-np.log(incidences.shape[0]))
+
+def gamma_prior(compounds, incidences, alpha = 1, beta = 1, scaling = 10):
+	all_card = len(compounds)
+	all_size = 0
+	for c in compounds: all_size += len(c)
+	all_x = np.empty(incidences.shape[0])
+	for ind, inc in enumerate(incidences):
+		curr_card = np.sum(inc)
+		curr_compounds = compounds[inc.astype(bool)]
+		curr_size = 0
+		for c in curr_compounds: curr_size += len(c)
+		# Here x is in the range of [0,1]
+		all_x[ind] = (alpha*(curr_card/all_card) + beta*(curr_size/all_size))/2
+	scaled_x = all_x * scaling
+	prior = gamma.logpdf(scaled_x, 1)
+	prior = prior - logsumexp(prior)
+	return prior
 
 def simple_llh(flag, model):
 	if flag == False: 

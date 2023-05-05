@@ -31,7 +31,6 @@ input_to_compound = {
 def main():
 	ground_truth = Compound_Model(elements, products, emergent_compound_products)
 	past_observations = []
-	model_history = []
 
 	# a little while loop for demonstration
 	print("-------------------------------------------------------------------")

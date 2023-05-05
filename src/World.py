@@ -1,5 +1,5 @@
 import numpy as np
-from Models import *
+from Models_alt import *
 
 # Global Variables
 global elements, emergent_compound_rewards

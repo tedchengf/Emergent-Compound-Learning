@@ -1,0 +1,72 @@
+"success","timeout","failed_images","failed_audio","failed_video","trial_type","trial_index","time_elapsed","internal_node_id","rt","response","stimulus","question_order"
+"true","false","[]","[]","[]","preload","0","15","0.0-0.0","","","",""
+"","","","","","survey-text","1","70931","0.0-1.0","70900","{""Q0"":""sl1""}","",""
+"","","","","","html-button-response","2","106592","0.0-2.0","35660","0","
+    <p> <b> You are an alchemist. </b></p>
+    <p>Before you are four basic elements: <br>
+    <em>Air  </em>(🜁), <em> Earth  </em> (🜃), <em> Fire </em> (🜂) , and <em> Water </em> (🜄) </p>
+    <p>In each trial of this experiment, you can choose to <br>
+    add 2 to 4 of these elements into a universal solvent (→) <br>
+    to test what the compound produces. </p>
+
+    <p>Examples:  <br>
+    Air (🜁) + Water (🜄) → ? <br> Air (🜁) + Earth (🜃) + Fire (🜂) + Water (🜄) → ? <br>
+    <div style='width: 700px;'>
+  ",""
+"","","","","","html-button-response","3","125072","0.0-3.0","18475","0","
+    <center> <p> You already know the following compounds </p>
+    <table> <tr> <td style= ""text-align: right""> Air (🜁) → </td> <td> <img width=""50"" height=""50"" src=""img/Antinomy.png""> </td> </tr>
+    <tr> <td style= ""text-align: right""> Earth (🜃) → </td> <td> <img width=""50"" height=""50"" src=""img/Bismuth.png""> </td> </tr>
+    <tr> <td style= ""text-align: right""> Fire (🜂) → </td> <td> <img width=""50"" height=""50"" src=""img/Arsenic.png""> </td> </tr>
+    <tr> <td style= ""text-align: right""> Water (🜄) → </td> <td> <img width=""50"" height=""50"" src=""img/Sulfur.png""> </td> </tr> </table> </center>
+    
+  ",""
+"","","","","","html-button-response","4","180953","0.0-4.0","55881","0","
+    <p> Given this knowledge, mathematically, there are 11 possible ways to combine each of the four elements with the solvent. <br>
+    There is a one-to-one relationship between compounds and their products <br>
+    (so there's no need to test the same compound more than once). <br>
+    <p> It's your job to figure out what each compound produces. <br>
+    Due to a shortage of solvent, <em> you can only test 8 compounds, </em>but <b> you should try to finish in as few trials as possible. </b> <br>
+    After 8 trials, you will be required to report what you think each compound produces. </p>
+    <p> If you think you know all of the compounds before your 8 trials are completed, click the ""I'm done"" button. </p>
+    <p> When you're ready to start testing, click continue. </p>
+    <div style='width: 700px;'>
+  ",""
+"","","","","","survey-multi-select","5","197547","0.0-5.0-0.0","16585","{""Trial"":[""Earth (🜃)"",""Water (🜄)""],""Q1"":[]}","","[0,1]"
+"","","","","","html-button-response","6","202519","0.0-5.0-1.0","4968","0","<table> <tr> <td> Earth + Water → </td> <td> <img width=""50"" height=""50"" src=""img/Bismuth.png""> <img width=""50"" height=""50"" src=""img/Sulfur.png""> </td> </tr> </table>",""
+"","","","","","survey-multi-select","7","217246","0.0-5.1-0.1","14717","{""Trial"":[""Air (🜁)"",""Fire (🜂)""],""Q1"":[]}","","[0,1]"
+"","","","","","html-button-response","8","220395","0.0-5.1-1.1","3144","0","<table> <tr> <td> Air + Fire → </td> <td> <img width=""50"" height=""50"" src=""img/Antinomy.png""> <img width=""50"" height=""50"" src=""img/Arsenic.png""> </td> </tr> </table>",""
+"","","","","","survey-multi-select","9","235211","0.0-5.2-0.2","14804","{""Trial"":[""Earth (🜃)"",""Fire (🜂)""],""Q1"":[]}","","[0,1]"
+"","","","","","html-button-response","10","237678","0.0-5.2-1.2","2459","0","<table> <tr> <td> Earth + Fire → </td> <td> <img width=""50"" height=""50"" src=""img/Bismuth.png""> <img width=""50"" height=""50"" src=""img/Arsenic.png""> </td> </tr> </table>",""
+"","","","","","survey-multi-select","11","259486","0.0-5.3-0.3","21795","{""Trial"":[""Air (🜁)"",""Earth (🜃)""],""Q1"":[]}","","[0,1]"
+"","","","","","html-button-response","12","296812","0.0-5.3-1.3","37314","0","<table> <tr> <td> Air + Earth → </td> <td> <img width=""50"" height=""50"" src=""img/Antinomy.png""> <img width=""50"" height=""50"" src=""img/Bismuth.png""> <img width=""50"" height=""50"" src=""img/Lead.png""> </td> </tr> </table>",""
+"","","","","","survey-multi-select","13","375343","0.0-5.4-0.4","78510","{""Trial"":[""Air (🜁)"",""Fire (🜂)"",""Water (🜄)""],""Q1"":[]}","","[0,1]"
+"","","","","","html-button-response","14","378824","0.0-5.4-1.4","3472","0","<table> <tr> <td> Air + Fire + Water → </td> <td> <img width=""50"" height=""50"" src=""img/Antinomy.png""> <img width=""50"" height=""50"" src=""img/Sulfur.png""> <img width=""50"" height=""50"" src=""img/Arsenic.png""> </td> </tr> </table>",""
+"","","","","","survey-multi-select","15","408605","0.0-5.5-0.5","29757","{""Trial"":[""Earth (🜃)"",""Fire (🜂)"",""Water (🜄)""],""Q1"":[]}","","[0,1]"
+"","","","","","html-button-response","16","412890","0.0-5.5-1.5","4274","0","<table> <tr> <td> Earth + Fire + Water → </td> <td> <img width=""50"" height=""50"" src=""img/Bismuth.png""> <img width=""50"" height=""50"" src=""img/Sulfur.png""> <img width=""50"" height=""50"" src=""img/Arsenic.png""> <img width=""50"" height=""50"" src=""img/Gold.png""> </td> </tr> </table>",""
+"","","","","","survey-multi-select","17","438610","0.0-5.6-0.6","25688","{""Trial"":[""Air (🜁)"",""Earth (🜃)"",""Fire (🜂)"",""Water (🜄)""],""Q1"":[]}","","[0,1]"
+"","","","","","html-button-response","18","442519","0.0-5.6-1.6","3900","0","<table> <tr> <td> Air + Earth + Fire + Water → </td> <td> <img width=""50"" height=""50"" src=""img/Antinomy.png""> <img width=""50"" height=""50"" src=""img/Bismuth.png""> <img width=""50"" height=""50"" src=""img/Sulfur.png""> <img width=""50"" height=""50"" src=""img/Arsenic.png""> <img width=""50"" height=""50"" src=""img/Lead.png""> <img width=""50"" height=""50"" src=""img/Silver.png""> <img width=""50"" height=""50"" src=""img/Gold.png""> </td> </tr> </table>",""
+"","","","","","survey-multi-select","19","655803","0.0-5.7-0.7","213244","{""Trial"":[""Air (🜁)"",""Earth (🜃)"",""Water (🜄)""],""Q1"":[]}","","[0,1]"
+"","","","","","html-button-response","20","658151","0.0-5.7-1.7","2336","0","<table> <tr> <td> Air + Earth + Water → </td> <td> <img width=""50"" height=""50"" src=""img/Antinomy.png""> <img width=""50"" height=""50"" src=""img/Bismuth.png""> <img width=""50"" height=""50"" src=""img/Sulfur.png""> <img width=""50"" height=""50"" src=""img/Lead.png""> <img width=""50"" height=""50"" src=""img/Silver.png""> </td> </tr> </table>",""
+"","","","","","html-button-response","21","660129","0.0-6.0","1959","0","<p> Congratulations! <br> The experimenter will now ask you to record what you think each compound produces. <br>
+        For reference, below are the compounds you tested. </p>
+        <center> <hr> Known Compounds: <br> <center> <table style=""width:75%""> 
+          <tr> 
+            <td> <center> Air (🜁) </center></td>
+            <td> <center> Earth (🜃) </center></td>
+            <td> <center> Fire (🜂) </center></td>
+            <td> <center> Water (🜄) </center></td>
+          </tr>
+          <tr> 
+            <td> <center> ↓ </center></td>
+            <td> <center> ↓ </center></td>
+            <td> <center> ↓ </center></td>
+            <td> <center> ↓ </center></td>
+          </tr>
+          <tr> 
+            <td> <center> <img width=""50"" height=""50"" src=""img/Antinomy.png""> </center></td>
+            <td> <center> <img width=""50"" height=""50"" src=""img/Bismuth.png""> </center></td>
+            <td> <center> <img width=""50"" height=""50"" src=""img/Arsenic.png""> </center></td>
+            <td> <center> <img width=""50"" height=""50"" src=""img/Sulfur.png""> </center></td>
+          </tr> </table> </center> <hr>
+        <center> Tested Compounds: </p> <table> <tr> <td style= ""text-align: right""> 1: Earth (🜃) + Water (🜄) → </td> <td> <img width=""50"" height=""50"" src=""img/Bismuth.png""> <img width=""50"" height=""50"" src=""img/Sulfur.png""> </td> </tr> <tr> <td style= ""text-align: right""> 2: Air (🜁) + Fire (🜂) → </td> <td> <img width=""50"" height=""50"" src=""img/Antinomy.png""> <img width=""50"" height=""50"" src=""img/Arsenic.png""> </td> </tr> <tr> <td style= ""text-align: right""> 3: Earth (🜃) + Fire (🜂) → </td> <td> <img width=""50"" height=""50"" src=""img/Bismuth.png""> <img width=""50"" height=""50"" src=""img/Arsenic.png""> </td> </tr> <tr> <td style= ""text-align: right""> 4: Air (🜁) + Earth (🜃) → </td> <td> <img width=""50"" height=""50"" src=""img/Antinomy.png""> <img width=""50"" height=""50"" src=""img/Bismuth.png""> <img width=""50"" height=""50"" src=""img/Lead.png""> </td> </tr> <tr> <td style= ""text-align: right""> 5: Air (🜁) + Fire (🜂) + Water (🜄) → </td> <td> <img width=""50"" height=""50"" src=""img/Antinomy.png""> <img width=""50"" height=""50"" src=""img/Sulfur.png""> <img width=""50"" height=""50"" src=""img/Arsenic.png""> </td> </tr> <tr> <td style= ""text-align: right""> 6: Earth (🜃) + Fire (🜂) + Water (🜄) → </td> <td> <img width=""50"" height=""50"" src=""img/Bismuth.png""> <img width=""50"" height=""50"" src=""img/Sulfur.png""> <img width=""50"" height=""50"" src=""img/Arsenic.png""> <img width=""50"" height=""50"" src=""img/Gold.png""> </td> </tr> <tr> <td style= ""text-align: right""> 7: Air (🜁) + Earth (🜃) + Fire (🜂) + Water (🜄) → </td> <td> <img width=""50"" height=""50"" src=""img/Antinomy.png""> <img width=""50"" height=""50"" src=""img/Bismuth.png""> <img width=""50"" height=""50"" src=""img/Sulfur.png""> <img width=""50"" height=""50"" src=""img/Arsenic.png""> <img width=""50"" height=""50"" src=""img/Lead.png""> <img width=""50"" height=""50"" src=""img/Silver.png""> <img width=""50"" height=""50"" src=""img/Gold.png""> </td> </tr> <tr> <td style= ""text-align: right""> 8: Air (🜁) + Earth (🜃) + Water (🜄) → </td> <td> <img width=""50"" height=""50"" src=""img/Antinomy.png""> <img width=""50"" height=""50"" src=""img/Bismuth.png""> <img width=""50"" height=""50"" src=""img/Sulfur.png""> <img width=""50"" height=""50"" src=""img/Lead.png""> <img width=""50"" height=""50"" src=""img/Silver.png""> </td> </tr> </table> </center>",""

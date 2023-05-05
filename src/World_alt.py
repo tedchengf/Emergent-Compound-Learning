@@ -1,5 +1,5 @@
 import numpy as np
-from Models_alt import *
+from Models import *
 
 # Global Variables
 global elements, products, emergent_compound_products
@@ -22,7 +22,7 @@ emergent_compound_products = {
 # 	("B",): products[2],
 # 	("C",): products[3],
 # 	("D",): products[4],
-# 	("A","B"): products[5],
+# 	("A","B"): None,
 # 	("A", "B", "D"): None,
 # 	("B", "C", "D"): None
 # }
