@@ -383,6 +383,13 @@ class Partition_Space():
 		ig = ig_func(np.exp(self.prior)) - ig_func(np.exp(posterior))
 		return np.exp(marginal)*ig
 
+	def compound_prob(self, compound):
+		prior = np.exp(self.prior)
+		prob = 0
+		for ind, bm in enumerate(self.hypotheses):
+			if compound in bm._E_compounds: prob += prior[ind]
+		return prob
+
 	# A function that update the models given the tested compound and the
 	# products. Does change the state of the models
 	def bayesian_update(self, tested_compound, observed_products, llh_func):
